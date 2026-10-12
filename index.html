@@ -1,52 +1,251 @@
+```html
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Test AR</title>
-    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <title>Juego AR - Atrapa las frutas</title>
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+
+    <!-- AR.js para marcadores Hiro -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: transparent;
+        }
+
+        a-scene {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-container {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #scoreboard {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            pointer-events: auto;
+        }
+
+        #controls button,
+        #btn-restart {
+            border: none;
+            border-radius: 14px;
+            padding: 16px 28px;
+            background: #ff9800;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        #game-over-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 350px;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            pointer-events: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #status {
+            position: absolute;
+            bottom: 110px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 14px;
+            text-shadow: 1px 1px 3px black;
+        }
+    </style>
 </head>
+
 <body>
-    <!-- UI -->
+
+    <!-- Interfaz del juego -->
     <div id="ui-container">
-        <div id="scoreboard">Puntos: <span id="score">0</span> | Vidas: <span id="vidas">3</span></div>
+
+        <div id="scoreboard">
+            Puntos: <span id="score">0</span>
+            &nbsp;|&nbsp;
+            Vidas: <span id="vidas">3</span>
+        </div>
 
         <div id="game-over-screen" class="hidden">
-            <h1>¡Fin del Juego!</h1>
+            <h1>¡Fin del juego!</h1>
             <p>Puntaje final: <span id="final-score">0</span></p>
             <button id="btn-restart">Jugar de nuevo</button>
         </div>
 
+        <div id="status">Busca el marcador Hiro</div>
+
         <div id="controls">
-            <button id="btn-left">◀</button>
-            <button id="btn-right">▶</button>
+            <button id="btn-left" aria-label="Mover izquierda">◀</button>
+            <button id="btn-right" aria-label="Mover derecha">▶</button>
         </div>
     </div>
 
-    <!-- Escena AR -->
+    <!-- Escena de realidad aumentada -->
     <a-scene
         embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true;"
-    >
-        <a-assets>
-            <a-asset-item id="canasta-model" src="models/canasta.glb"></a-asset-item>
-            <a-asset-item id="fruta1-model" src="models/manzana.glb"></a-asset-item>
+        renderer="logarithmicDepthBuffer: true; colorManagement: true"
+        arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;">
+
+        <a-assets timeout="15000">
+            <a-asset-item
+                id="canasta-model"
+                src="models/canasta.glb">
+            </a-asset-item>
+
+            <a-asset-item
+                id="fruta1-model"
+                src="models/manzana.glb">
+            </a-asset-item>
         </a-assets>
 
-        <a-light type="ambient" color="#FFF" intensity="1"></a-light>
-        <a-light type="directional" position="0 3 2" intensity="1"></a-light>
+        <!-- Iluminación -->
+        <a-light type="ambient" color="#FFFFFF" intensity="1.5"></a-light>
 
-        <a-marker preset="hiro" id="markerHiro">
-            <a-entity id="canasta" gltf-model="#canasta-model" position="0 0.2 0" scale="0.5 0.5 0.5"></a-entity>
-            <a-entity id="objeto-caida" gltf-model="#fruta1-model" position="0 1.5 0" scale="0.3 0.3 0.3"></a-entity>
+        <a-light
+            type="directional"
+            color="#FFFFFF"
+            intensity="1.5"
+            position="1 3 2">
+        </a-light>
+
+        <!-- Marcador Hiro -->
+        <a-marker
+            id="markerHiro"
+            preset="hiro"
+            emitevents="true">
+
+            <!-- Objeto de prueba: debe verse al detectar Hiro -->
+            <a-box
+                id="prueba-marker"
+                position="0 0.5 0"
+                width="0.35"
+                height="0.35"
+                depth="0.35"
+                color="#00FF00"
+                material="shader: flat">
+            </a-box>
+
+            <!-- Canasta -->
+            <a-entity
+                id="canasta"
+                gltf-model="#canasta-model"
+                position="0 0.05 0"
+                scale="0.5 0.5 0.5">
+            </a-entity>
+
+            <!-- Manzana -->
+            <a-entity
+                id="objeto-caida"
+                gltf-model="#fruta1-model"
+                position="0 0.8 0"
+                scale="0.3 0.3 0.3">
+            </a-entity>
+
         </a-marker>
 
+        <!-- Cámara -->
         <a-entity camera></a-entity>
+
     </a-scene>
 
+    <!-- Tu lógica del juego -->
     <script src="script.js"></script>
+
+    <!-- Mensajes para diagnosticar el problema -->
+    <script>
+        const marcador = document.querySelector("#markerHiro");
+        const estado = document.querySelector("#status");
+
+        marcador.addEventListener("markerFound", () => {
+            estado.textContent = "¡Marcador detectado!";
+            console.log("AR: marcador Hiro detectado");
+        });
+
+        marcador.addEventListener("markerLost", () => {
+            estado.textContent = "Busca el marcador Hiro";
+            console.log("AR: marcador Hiro perdido");
+        });
+
+        document.querySelector("#canasta").addEventListener(
+            "model-loaded",
+            () => console.log("Modelo de canasta cargado")
+        );
+
+        document.querySelector("#canasta").addEventListener(
+            "model-error",
+            (e) => console.error("Error cargando canasta:", e.detail)
+        );
+
+        document.querySelector("#objeto-caida").addEventListener(
+            "model-loaded",
+            () => console.log("Modelo de manzana cargado")
+        );
+
+        document.querySelector("#objeto-caida").addEventListener(
+            "model-error",
+            (e) => console.error("Error cargando manzana:", e.detail)
+        );
+    </script>
+
 </body>
 </html>
+```
