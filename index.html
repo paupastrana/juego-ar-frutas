@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Juego AR - Atrapa la Fruta</title>
+    <!-- Incluimos A-Frame y MindAR -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Interfaz de Usuario superpuesta (Puntaje y Botones) -->
+    <div id="ui-container">
+        <div id="scoreboard">Puntos: <span id="score">0</span></div>
+        <div id="game-over-screen" class="hidden">
+            <h1>¡Fin del Juego!</h1>
+            <p>Puntaje final: <span id="final-score">0</span></p>
+            <button onclick="reiniciarJuego()">Jugar de nuevo</button>
+        </div>
+        
+        <!-- Botones táctiles para mover la canasta -->
+        <div id="controls">
+            <button id="btn-left" ontouchstart="moverCanasta(-0.5)" onmousedown="moverCanasta(-0.5)">◀ Izquierda</button>
+            <button id="btn-right" ontouchstart="moverCanasta(0.5)" onmousedown="moverCanasta(0.5)">Derecha ▶</button>
+        </div>
+    </div>
+
+    <!-- Escena de Realidad Aumentada -->
+    <a-scene mindar-image="imageTargetSrc: marker.mind;" embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-assets>
+            <!-- Carga tus modelos 3D en formato GLB (menores a 5 MB) -->
+            <a-asset-item id="canasta-model" src="models/canasta.glb"></a-asset-item>
+            <a-asset-item id="fruta1-model" src="models/manzana.glb"></a-asset-item>
+            <a-asset-item id="fruta2-model" src="models/sandia.glb"></a-asset-item>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <!-- Anclado al Marcador QR -->
+        <a-entity mindar-image-target="targetIndex: 0">
+            <!-- Canasta controlada por botones (posición inicial en X = 0) -->
+            <a-entity id="canasta" gltf-model="#canasta-model" position="0 0 0" scale="0.5 0.5 0.5"></a-entity>
+            
+            <!-- Fruta que caerá -->
+            <a-entity id="fruta" gltf-model="#fruta1-model" position="0 1.5 0" scale="0.3 0.3 0.3"></a-entity>
+        </a-entity>
+    </a-scene>
+
+    <script src="script.js"></script>
+</body>
+</html>
