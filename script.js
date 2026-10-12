@@ -1,149 +1,257 @@
-let score = 0;
+
+const video = document.getElementById("camera-video");
+
+const btnStart = document.getElementById("btn-start");
+const btnLeft = document.getElementById("btn-left");
+const btnRight = document.getElementById("btn-right");
+const btnRestart = document.getElementById("btn-restart");
+
+const startScreen = document.getElementById("start-screen");
+const gameOverScreen = document.getElementById("game-over-screen");
+const cameraStatus = document.getElementById("camera-status");
+
+const scoreText = document.getElementById("score");
+const vidasText = document.getElementById("vidas");
+const finalScoreText = document.getElementById("final-score");
+
+const canasta = document.getElementById("canasta");
+const fruta = document.getElementById("fruta");
+
+let puntos = 0;
 let vidas = 3;
-let posXCanasta = 0;
-let posYObjeto = 1.5;
-let posXObjeto = 0;
-let esBomba = false;
-let juegoActivo = true;
-let animacionId = null;
-let puedeVibrar = false;
+let jugando = false;
+let camaraActiva = false;
 
-const canastaEl    = document.querySelector('#canasta');
-const objetoEl     = document.querySelector('#objeto-caida');
-const scoreDisplay = document.querySelector('#score');
-const vidasDisplay = document.querySelector('#vidas');
+let canastaX = 0;
+let frutaX = 0;
+let frutaY = 1.2;
 
-/* Vibración segura: solo después de que el usuario toque la pantalla */
-function vibrar(patron) {
-    if (!puedeVibrar) return;
-    if (navigator.vibrate) navigator.vibrate(patron);
-}
+let velocidad = 0.012;
+let ultimaActualizacion = 0;
+let animacion = null;
 
-window.addEventListener('touchstart', () => { puedeVibrar = true; }, { once: true });
-window.addEventListener('mousedown',  () => { puedeVibrar = true; }, { once: true });
+// Límites de movimiento
+const LIMITE_IZQUIERDO = -1.25;
+const LIMITE_DERECHO = 1.25;
 
-/* Arranque */
-window.addEventListener('load', () => {
-    score = 0;
-    vidas = 3;
-    posYObjeto = 1.5;
-    posXObjeto = 0;
-    juegoActivo = true;
+// Comprobar que los modelos cargaron
+let canastaCargada = false;
+let frutaCargada = false;
 
-    if (scoreDisplay) scoreDisplay.textContent = score;
-    if (vidasDisplay) vidasDisplay.textContent = vidas;
-
-    if (objetoEl) objetoEl.setAttribute('position', '0 1.5 0');
-
-    if (animacionId) cancelAnimationFrame(animacionId);
-    actualizarJuego();
+canasta.addEventListener("model-loaded", () => {
+    canastaCargada = true;
+    console.log("Canasta cargada correctamente");
 });
 
-/* Bucle principal */
-function actualizarJuego() {
-    if (!juegoActivo) return;
+fruta.addEventListener("model-loaded", () => {
+    frutaCargada = true;
+    console.log("Manzana cargada correctamente");
+});
 
-    posYObjeto -= 0.02;
-    if (posYObjeto < -0.3) posYObjeto = -0.3;
+canasta.addEventListener("model-error", (e) => {
+    console.error("No se pudo cargar la canasta:", e.detail);
+});
 
-    if (objetoEl) {
-        objetoEl.setAttribute('position', `${posXObjeto} ${posYObjeto} 0`);
-    }
+fruta.addEventListener("model-error", (e) => {
+    console.error("No se pudo cargar la manzana:", e.detail);
+});
 
-    if (posYObjeto <= 0) {
-        const distancia = Math.abs(posXCanasta - posXObjeto);
+// Activar la cámara
+async function activarCamara() {
+    try {
+        cameraStatus.textContent = "Solicitando permiso para la cámara...";
 
-        if (distancia < 0.4) {
-            if (esBomba) {
-                vidas--;
-                if (vidasDisplay) vidasDisplay.textContent = vidas;
-                vibrar([100, 50, 100]);
-
-                if (vidas <= 0) {
-                    finalizarJuego();
-                    return;
-                }
-            } else {
-                score += 10;
-                if (scoreDisplay) scoreDisplay.textContent = score;
-                vibrar(50);
-            }
+        if (!navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia) {
+            throw new Error(
+                "El navegador no permite acceder a la cámara. " +
+                "Abre el sitio mediante HTTPS y usa un navegador compatible."
+            );
         }
 
-        // Reinicia el objeto arriba
-        posYObjeto = 1.5;
-        posXObjeto = (Math.random() - 0.5) * 2;
-        esBomba = Math.random() < 0.3;
-
-        if (objetoEl) {
-            if (esBomba) {
-                objetoEl.removeAttribute('gltf-model');
-                objetoEl.setAttribute('geometry', 'primitive: sphere; radius: 0.15');
-                objetoEl.setAttribute('material', 'color: black');
-            } else {
-                objetoEl.removeAttribute('geometry');
-                objetoEl.removeAttribute('material');
-                objetoEl.setAttribute('gltf-model', '#fruta1-model');
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
             }
-        }
+        });
+
+        video.srcObject = stream;
+        await video.play();
+
+        camaraActiva = true;
+        cameraStatus.textContent = "¡Cámara activada!";
+
+        return true;
+
+    } catch (error) {
+        console.error("Error con la cámara:", error);
+
+        cameraStatus.textContent =
+            "No se pudo activar la cámara: " + error.message;
+
+        return false;
     }
-
-    animacionId = requestAnimationFrame(actualizarJuego);
 }
 
-/* Mover canasta */
-function moverCanasta(delta) {
-    posXCanasta += delta;
-    if (posXCanasta > 1.5)  posXCanasta = 1.5;
-    if (posXCanasta < -1.5) posXCanasta = -1.5;
-    if (canastaEl) canastaEl.setAttribute('position', `${posXCanasta} 0.2 0`);
+// Posicionar los modelos en la escena
+function actualizarCanasta() {
+    canasta.setAttribute("position", {
+        x: canastaX,
+        y: -1.25,
+        z: -3
+    });
 }
 
-/* Fin del juego */
-function finalizarJuego() {
-    juegoActivo = false;
-    const fs = document.querySelector('#final-score');
-    if (fs) fs.textContent = score;
-    const go = document.querySelector('#game-over-screen');
-    if (go) go.classList.remove('hidden');
+function actualizarFruta() {
+    fruta.setAttribute("position", {
+        x: frutaX,
+        y: frutaY,
+        z: -3
+    });
 }
 
-/* Reiniciar */
-function reiniciarJuego() {
-    const go = document.querySelector('#game-over-screen');
-    if (go) go.classList.add('hidden');
+// Generar una nueva manzana
+function nuevaFruta() {
+    frutaX = LIMITE_IZQUIERDO +
+        Math.random() * (LIMITE_DERECHO - LIMITE_IZQUIERDO);
 
-    score = 0;
+    frutaY = 1.5;
+    actualizarFruta();
+}
+
+// Iniciar o reiniciar la partida
+function iniciarJuego() {
+    puntos = 0;
     vidas = 3;
-    posXCanasta = 0;
-    posXObjeto = 0;
-    posYObjeto = 1.5;
-    juegoActivo = true;
+    canastaX = 0;
+    velocidad = 0.012;
+    ultimaActualizacion = 0;
 
-    if (scoreDisplay) scoreDisplay.textContent = score;
-    if (vidasDisplay) vidasDisplay.textContent = vidas;
-    if (canastaEl) canastaEl.setAttribute('position', '0 0.2 0');
-    if (objetoEl)  objetoEl.setAttribute('position', '0 1.5 0');
+    scoreText.textContent = puntos;
+    vidasText.textContent = vidas;
 
-    if (animacionId) cancelAnimationFrame(animacionId);
-    actualizarJuego();
+    gameOverScreen.classList.add("hidden");
+    startScreen.classList.add("hidden");
+
+    canasta.setAttribute("visible", true);
+    fruta.setAttribute("visible", true);
+
+    actualizarCanasta();
+    nuevaFruta();
+
+    jugando = true;
+
+    if (animacion !== null) {
+        cancelAnimationFrame(animacion);
+    }
+
+    animacion = requestAnimationFrame(actualizarJuego);
 }
 
-/* Botones */
-window.addEventListener('load', () => {
-    const btnL = document.querySelector('#btn-left');
-    const btnR = document.querySelector('#btn-right');
-    const btnRestart = document.querySelector('#btn-restart');
+// Mover la canasta
+function moverCanasta(direccion) {
+    if (!jugando) return;
 
-    if (btnL) {
-        btnL.addEventListener('touchstart', (e) => { e.preventDefault(); moverCanasta(-0.4); });
-        btnL.addEventListener('mousedown',  (e) => { e.preventDefault(); moverCanasta(-0.4); });
+    canastaX += direccion * 0.25;
+
+    canastaX = Math.max(
+        LIMITE_IZQUIERDO,
+        Math.min(LIMITE_DERECHO, canastaX)
+    );
+
+    actualizarCanasta();
+}
+
+btnLeft.addEventListener("click", () => {
+    moverCanasta(-1);
+});
+
+btnRight.addEventListener("click", () => {
+    moverCanasta(1);
+});
+
+// También permitir mover con las flechas del teclado
+document.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") moverCanasta(-1);
+    if (event.key === "ArrowRight") moverCanasta(1);
+});
+
+// Bucle principal
+function actualizarJuego(timestamp) {
+    if (!jugando) return;
+
+    if (ultimaActualizacion === 0) {
+        ultimaActualizacion = timestamp;
     }
-    if (btnR) {
-        btnR.addEventListener('touchstart', (e) => { e.preventDefault(); moverCanasta(0.4); });
-        btnR.addEventListener('mousedown',  (e) => { e.preventDefault(); moverCanasta(0.4); });
+
+    // Normalizar el movimiento según el tiempo transcurrido
+    const delta = Math.min(timestamp - ultimaActualizacion, 50);
+    ultimaActualizacion = timestamp;
+
+    frutaY -= velocidad * delta;
+    actualizarFruta();
+
+    // La manzana llega a la altura de la canasta
+    if (frutaY <= -1.05) {
+        const atrapada = Math.abs(frutaX - canastaX) < 0.48;
+
+        if (atrapada) {
+            puntos++;
+            scoreText.textContent = puntos;
+
+            // Aumentar gradualmente la dificultad
+            velocidad = Math.min(velocidad + 0.0005, 0.035);
+        } else {
+            vidas--;
+            vidasText.textContent = vidas;
+        }
+
+        if (vidas <= 0) {
+            terminarJuego();
+            return;
+        }
+
+        nuevaFruta();
     }
-    if (btnRestart) {
-        btnRestart.addEventListener('click', reiniciarJuego);
+
+    animacion = requestAnimationFrame(actualizarJuego);
+}
+
+// Finalizar partida
+function terminarJuego() {
+    jugando = false;
+
+    if (animacion !== null) {
+        cancelAnimationFrame(animacion);
+        animacion = null;
+    }
+
+    finalScoreText.textContent = puntos;
+    gameOverScreen.classList.remove("hidden");
+}
+
+// Botón para comenzar
+btnStart.addEventListener("click", async () => {
+    btnStart.disabled = true;
+
+    const activa = await activarCamara();
+
+    btnStart.disabled = false;
+
+    if (!activa) return;
+
+    iniciarJuego();
+});
+
+// Volver a jugar sin solicitar de nuevo la cámara
+btnRestart.addEventListener("click", () => {
+    if (camaraActiva) {
+        iniciarJuego();
     }
 });
+
+// Estado inicial
+console.log("Juego cargado. Pulsa Activar cámara y jugar.");
