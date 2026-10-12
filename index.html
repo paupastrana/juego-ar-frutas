@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Juego AR - Atrapa la Fruta</title>
-    <!-- Solo necesitamos A-Frame básico -->
+    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Interfaz de Usuario -->
     <div id="ui-container">
         <div id="scoreboard">Puntos: <span id="score">0</span></div>
         <div id="game-over-screen" class="hidden">
@@ -17,13 +18,14 @@
             <button onclick="reiniciarJuego()">Jugar de nuevo</button>
         </div>
         
+        <!-- Botones táctiles -->
         <div id="controls">
             <button id="btn-left" ontouchstart="moverCanasta(-0.5)" onmousedown="moverCanasta(-0.5)">◀ Izquierda</button>
             <button id="btn-right" ontouchstart="moverCanasta(0.5)" onmousedown="moverCanasta(0.5)">Derecha ▶</button>
         </div>
     </div>
 
-    <!-- Escena A-Frame normal sin MindAR para que cargue inmediato -->
+    <!-- Escena 3D -->
     <a-scene embedded vr-mode-ui="enabled: false">
         <a-assets>
             <a-asset-item id="canasta-model" src="models/canasta.glb"></a-asset-item>
@@ -31,9 +33,10 @@
         </a-assets>
 
         <a-camera position="0 1.6 3"></a-camera>
-        <a-light type="ambient" color="#FFF"></a-light>
+        <a-light type="ambient" color="#FFF" intensity="1"></a-light>
+        <a-light type="directional" position="0 3 2" intensity="1"></a-light>
 
-        <!-- Canasta y Fruta visibles directo en la escena -->
+        <!-- Canasta y Fruta -->
         <a-entity id="canasta" gltf-model="#canasta-model" position="0 0 0" scale="0.5 0.5 0.5"></a-entity>
         <a-entity id="fruta" gltf-model="#fruta1-model" position="0 2 -1" scale="0.3 0.3 0.3"></a-entity>
     </a-scene>
