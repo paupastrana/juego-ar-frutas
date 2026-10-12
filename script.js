@@ -1,13 +1,3 @@
-/* ============================================================
-   MODO PRUEBA
-   ------------------------------------------------------------
-   Si la pantalla sigue blanca, pon MODO_PRUEBA = true.
-   Con eso se activa el juego pero SIN vibración y SIN
-   llamar al modelo 3D (solo un cubo rojo), para aislar
-   el problema de la cámara.
-   ============================================================ */
-const MODO_PRUEBA = false;
-
 let score = 0;
 let vidas = 3;
 let posXCanasta = 0;
@@ -23,7 +13,7 @@ const objetoEl     = document.querySelector('#objeto-caida');
 const scoreDisplay = document.querySelector('#score');
 const vidasDisplay = document.querySelector('#vidas');
 
-/* --- Vibración segura: solo vibra si el usuario ya tocó la pantalla --- */
+/* Vibración segura: solo después de que el usuario toque la pantalla */
 function vibrar(patron) {
     if (!puedeVibrar) return;
     if (navigator.vibrate) navigator.vibrate(patron);
@@ -32,7 +22,7 @@ function vibrar(patron) {
 window.addEventListener('touchstart', () => { puedeVibrar = true; }, { once: true });
 window.addEventListener('mousedown',  () => { puedeVibrar = true; }, { once: true });
 
-/* --- Arranque --- */
+/* Arranque */
 window.addEventListener('load', () => {
     score = 0;
     vidas = 3;
@@ -49,7 +39,7 @@ window.addEventListener('load', () => {
     actualizarJuego();
 });
 
-/* --- Bucle principal --- */
+/* Bucle principal */
 function actualizarJuego() {
     if (!juegoActivo) return;
 
@@ -101,7 +91,7 @@ function actualizarJuego() {
     animacionId = requestAnimationFrame(actualizarJuego);
 }
 
-/* --- Mover canasta --- */
+/* Mover canasta */
 function moverCanasta(delta) {
     posXCanasta += delta;
     if (posXCanasta > 1.5)  posXCanasta = 1.5;
@@ -109,7 +99,7 @@ function moverCanasta(delta) {
     if (canastaEl) canastaEl.setAttribute('position', `${posXCanasta} 0.2 0`);
 }
 
-/* --- Fin del juego --- */
+/* Fin del juego */
 function finalizarJuego() {
     juegoActivo = false;
     const fs = document.querySelector('#final-score');
@@ -118,7 +108,7 @@ function finalizarJuego() {
     if (go) go.classList.remove('hidden');
 }
 
-/* --- Reiniciar --- */
+/* Reiniciar */
 function reiniciarJuego() {
     const go = document.querySelector('#game-over-screen');
     if (go) go.classList.add('hidden');
@@ -139,7 +129,7 @@ function reiniciarJuego() {
     actualizarJuego();
 }
 
-/* --- Botones (los conectamos por JS para evitar onmousedown/ontouchstart duplicados) --- */
+/* Botones */
 window.addEventListener('load', () => {
     const btnL = document.querySelector('#btn-left');
     const btnR = document.querySelector('#btn-right');
