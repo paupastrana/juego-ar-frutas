@@ -5,6 +5,7 @@ html, body {
     width: 100%;
     height: 100%;
     font-family: sans-serif;
+    background: #000;
     touch-action: none;
 }
 
@@ -50,6 +51,7 @@ html, body {
     font-weight: bold;
     color: #333;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #game-over-screen {
@@ -76,4 +78,5 @@ html, body {
     border-radius: 8px;
     background: #4CAF50;
     color: white;
+    cursor: pointer;
 }
