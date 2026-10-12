@@ -1,70 +1,79 @@
-body {
+html, body {
     margin: 0;
+    padding: 0;
     overflow: hidden;
-    font-family: Arial, sans-serif;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+    touch-action: none;
 }
 
 #ui-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
     z-index: 10;
-    pointer-events: none; /* Permite que los clicks pasen a la cámara donde no haya UI */
 }
 
 #scoreboard {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 24px;
-    font-weight: bold;
+    top: 15px;
+    left: 15px;
+    background: rgba(0,0,0,0.6);
     color: white;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 10px 20px;
-    border-radius: 8px;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
 }
 
 #controls {
     position: absolute;
     bottom: 30px;
+    left: 0;
     width: 100%;
     display: flex;
-    justify-content: space-around;
-    pointer-events: auto; /* Activa clicks en los botones */
+    justify-content: space-between;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 #controls button {
-    background-color: #ff9800;
-    color: white;
+    pointer-events: auto;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
     border: none;
-    padding: 15px 30px;
-    font-size: 18px;
+    background: rgba(255,255,255,0.8);
+    font-size: 32px;
     font-weight: bold;
-    border-radius: 50px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    cursor: pointer;
-}
-
-#controls button:active {
-    background-color: #f57c00;
-    transform: scale(0.95);
-}
-
-.hidden {
-    display: none !important;
+    color: #333;
+    user-select: none;
 }
 
 #game-over-screen {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
-    padding: 30px;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 30px 40px;
     border-radius: 15px;
     text-align: center;
     pointer-events: auto;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+#game-over-screen.hidden {
+    display: none;
+}
+
+#game-over-screen button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background: #4CAF50;
+    color: white;
 }
