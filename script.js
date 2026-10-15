@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const canasta = document.getElementById("canasta");
     const fruta = document.getElementById("fruta");
+    const bomba = document.getElementById("bomba"); // Referencia al modelo de la bomba
     
     const scoreEl = document.getElementById("score");
     const vidasEl = document.getElementById("vidas");
@@ -20,9 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
     let vidas = 3;
     let gameActive = false;
     let canastaPosX = 0; // Posición horizontal de la canasta
-    let frutaPosY = 2;   // Posición vertical inicial de la fruta
-    let frutaPosX = 0;   // Posición horizontal aleatoria de la fruta
-    let velocidadFruta = 0.02;
+    
+    let objetoPosY = 2;   
+    let objetoPosX = 0;   
+    let velocidadObjeto = 0.025;
+    let tipoObjetoActual = "fruta"; // Puede ser "fruta" o "bomba"
 
     // Activar la cámara del dispositivo móvil o PC
     async function activarCamara() {
@@ -40,13 +43,12 @@ document.addEventListener("DOMContentLoaded", () => {
             videoElement.srcObject = stream;
             await videoElement.play();
 
-            // Ocultar pantalla de inicio y mostrar modelos 3D
+            // Ocultar pantalla de inicio y mostrar la canasta
             startScreen.style.display = "none";
             canasta.setAttribute("visible", "true");
-            fruta.setAttribute("visible", "true");
 
             gameActive = true;
-            reiniciarFruta();
+            lanzarNuevoObjeto();
             iniciarGameLoop();
         } catch (error) {
             console.error("Error al acceder a la cámara:", error);
@@ -67,11 +69,24 @@ document.addEventListener("DOMContentLoaded", () => {
         canasta.setAttribute("position", `${canastaPosX} -1.25 -3`);
     });
 
-    function reiniciarFruta() {
-        frutaPosY = 3;
+    // Decide aleatoriamente si cae una fruta o una bomba
+    function lanzarNuevoObjeto() {
+        objetoPosY = 3;
         // Posición X aleatoria entre -1.8 y 1.8
-        frutaPosX = (Math.random() * 3.6) - 1.8;
-        fruta.setAttribute("position", `${frutaPosX} ${frutaPosY} -3`);
+        objetoPosX = (Math.random() * 3.6) - 1.8;
+
+        // 65% de probabilidad de fruta, 35% de bomba
+        if (Math.random() < 0.65) {
+            tipoObjetoActual = "fruta";
+            fruta.setAttribute("visible", "true");
+            bomba.setAttribute("visible", "false");
+            fruta.setAttribute("position", `${objetoPosX} ${objetoPosY} -3`);
+        } else {
+            tipoObjetoActual = "bomba";
+            fruta.setAttribute("visible", "false");
+            bomba.setAttribute("visible", "true");
+            bomba.setAttribute("position", `${objetoPosX} ${objetoPosY} -3`);
+        }
     }
 
     // Bucle principal del juego
@@ -79,29 +94,48 @@ document.addEventListener("DOMContentLoaded", () => {
         function actualizar() {
             if (!gameActive) return;
 
-            // Caída de la fruta
-            frutaPosY -= velocidadFruta;
-            fruta.setAttribute("position", `${frutaPosX} ${frutaPosY} -3`);
+            // Caída del objeto actual
+            objetoPosY -= velocidadObjeto;
 
-            // Detectar si la fruta llega a la altura de la canasta (Y aprox -1.2)
-            if (frutaPosY <= -1.1 && frutaPosY >= -1.4) {
-                // Comprobar si la canasta está cerca en el eje X (colisión simple)
-                if (Math.abs(canastaPosX - frutaPosX) < 0.6) {
-                    score += 10;
-                    scoreEl.textContent = score;
-                    reiniciarFruta();
+            if (tipoObjetoActual === "fruta") {
+                fruta.setAttribute("position", `${objetoPosX} ${objetoPosY} -3`);
+            } else {
+                bomba.setAttribute("position", `${objetoPosX} ${objetoPosY} -3`);
+            }
+
+            // Detectar si el objeto llega a la altura de la canasta (Y aprox -1.2)
+            if (objetoPosY <= -1.1 && objetoPosY >= -1.4) {
+                // Comprobar si la canasta está cerca en el eje X
+                if (Math.abs(canastaPosX - objetoPosX) < 0.6) {
+                    if (tipoObjetoActual === "fruta") {
+                        score += 10;
+                        scoreEl.textContent = score;
+                    } else {
+                        // Si atrapa la bomba, pierde una vida
+                        vidas -= 1;
+                        vidasEl.textContent = vidas;
+                        if (vidas <= 0) {
+                            terminarJuego();
+                            return;
+                        }
+                    }
+                    lanzarNuevoObjeto();
                 }
             }
 
-            // Si la fruta cae al suelo sin ser atrapada
-            if (frutaPosY < -2.0) {
-                vidas -= 1;
-                vidasEl.textContent = vidas;
-                if (vidas <= 0) {
-                    terminarJuego();
-                    return;
+            // Si el objeto pasa de largo hacia abajo
+            if (objetoPosY < -2.0) {
+                // Si se cae una fruta al suelo sin atraparla, pierde vida
+                if (tipoObjetoActual === "fruta") {
+                    vidas -= 1;
+                    vidasEl.textContent = vidas;
+                    if (vidas <= 0) {
+                        terminarJuego();
+                        return;
+                    }
                 }
-                reiniciarFruta();
+                // Si se cae una bomba sin tocarla, no pasa nada (¡se salvó el jugador!)
+                lanzarNuevoObjeto();
             }
 
             requestAnimationFrame(actualizar);
@@ -113,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
         gameActive = false;
         canasta.setAttribute("visible", "false");
         fruta.setAttribute("visible", "false");
+        bomba.setAttribute("visible", "false");
         finalScoreEl.textContent = score;
         gameOverScreen.classList.remove("hidden");
     }
@@ -125,11 +160,10 @@ document.addEventListener("DOMContentLoaded", () => {
         vidasEl.textContent = vidas;
         gameOverScreen.classList.add("hidden");
         canasta.setAttribute("visible", "true");
-        fruta.setAttribute("visible", "true");
         canastaPosX = 0;
         canasta.setAttribute("position", `${canastaPosX} -1.25 -3`);
         gameActive = true;
-        reiniciarFruta();
+        lanzarNuevoObjeto();
         iniciarGameLoop();
     });
 });

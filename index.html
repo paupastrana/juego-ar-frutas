@@ -50,6 +50,12 @@
             <a-asset-item id="canasta-model" src="models/canasta.glb"></a-asset-item>
             <a-asset-item id="fruta-model" src="models/manzana.glb"></a-asset-item>
         </a-assets>
+        <a-assets timeout="20000">
+            <a-asset-item id="canasta-model" src="models/canasta.glb"></a-asset-item>
+            <a-asset-item id="fruta-model" src="models/manzana.glb"></a-asset-item>
+            <!-- Nuevo asset para la bomba -->
+            <a-asset-item id="bomba-model" src="models/bomba.glb"></a-asset-item>
+        </a-assets>
 
         <a-light type="ambient" color="#FFFFFF" intensity="2"></a-light>
         <a-light type="directional" color="#FFFFFF" intensity="2" position="-1 3 2"></a-light>
@@ -66,7 +72,13 @@
         <a-entity id="fruta"
                   gltf-model="#fruta-model"
                   position="0 2 -3"
-                  scale="0.08 0.08 0.08" 
+                  scale="0.05 0.05 0.05" 
+                  visible="false">
+        </a-entity>
+        <a-entity id="bomba"
+                  gltf-model="#bomba-model"
+                  position="0 2 -3"
+                  scale="0.05 0.05 0.05" 
                   visible="false">
         </a-entity>
 
