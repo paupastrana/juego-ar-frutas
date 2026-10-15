@@ -23,18 +23,27 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let objetosEnJuego = [];
     let tiempoUltimoSpawn = 0;
-    let intervaloSpawn = 2000; // Milisegundos iniciales entre cada objeto
-    let velocidadBase = 0.02;  // Velocidad inicial de caída
+    let velocidadBase = 0.02;
 
     async function activarCamara() {
         try {
             const constraints = {
-                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+                video: {
+                    facingMode: "environment", // Cámara trasera
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
                 audio: false
             };
 
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             videoElement.srcObject = stream;
+            
+            // Forzar reproducción para evitar pantalla negra en móviles
+            videoElement.setAttribute("autoplay", "");
+            videoElement.setAttribute("muted", "");
+            videoElement.setAttribute("playsinline", "");
+            
             await videoElement.play();
 
             startScreen.style.display = "none";
@@ -47,27 +56,26 @@ document.addEventListener("DOMContentLoaded", () => {
             iniciarGameLoop(performance.now());
         } catch (error) {
             console.error("Error al acceder a la cámara:", error);
-            cameraStatus.textContent = "Error: No se pudo acceder a la cámara. Revisa los permisos o usa HTTPS.";
+            cameraStatus.textContent = "Error de cámara. Asegúrate de usar HTTPS.";
         }
     }
 
-    // Movimiento de la canasta
+    // Límites de la canasta reducidos para que no salgan del celular (-1.3 a 1.3)
     btnLeft.addEventListener("click", () => {
         if (!gameActive) return;
-        canastaPosX = Math.max(canastaPosX - 0.4, -2.0);
+        canastaPosX = Math.max(canastaPosX - 0.35, -1.3);
         canasta.setAttribute("position", `${canastaPosX} -1.25 -3`);
     });
 
     btnRight.addEventListener("click", () => {
         if (!gameActive) return;
-        canastaPosX = Math.min(canastaPosX + 0.4, 2.0);
+        canastaPosX = Math.min(canastaPosX + 0.35, 1.3);
         canasta.setAttribute("position", `${canastaPosX} -1.25 -3`);
     });
 
-    // Crear un nuevo objeto (fruta o bomba) en pantalla
     function crearObjeto() {
         const el = document.createElement("a-entity");
-        const esFruta = Math.random() < 0.7; // 70% fruta, 30% bomba
+        const esFruta = Math.random() < 0.7;
         
         if (esFruta) {
             el.setAttribute("gltf-model", "#fruta-model");
@@ -80,7 +88,8 @@ document.addEventListener("DOMContentLoaded", () => {
             el.dataset.tipo = "bomba";
         }
 
-        const posX = (Math.random() * 3.6) - 1.8;
+        // Rango X ajustado de -1.2 a 1.2 para que caigan dentro de la pantalla vertical del celular
+        const posX = (Math.random() * 2.4) - 1.2;
         const posY = 3.0;
         el.setAttribute("position", `${posX} ${posY} -3`);
 
@@ -94,31 +103,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Bucle principal con aumento progresivo de dificultad
     function iniciarGameLoop(tiempoActual) {
         if (!gameActive) return;
 
-        // Calcular dificultad basada en el puntaje o tiempo
-        // Entre más puntos tengas, mayor será la velocidad y más frecuente el spawn
         let factorDificultad = 1 + (score / 50); 
         let velocidadActual = velocidadBase * factorDificultad;
-        let intervaloActual = Math.max(800, 2000 - (score * 25)); // Límite mínimo de 800ms
+        let intervaloActual = Math.max(800, 2000 - (score * 25));
 
-        // Generar nuevo objeto según el intervalo dinámico
         if (tiempoActual - tiempoUltimoSpawn > intervaloActual) {
             crearObjeto();
             tiempoUltimoSpawn = tiempoActual;
         }
 
-        // Actualizar posición de todos los objetos en juego
         for (let i = objetosEnJuego.length - 1; i >= 0; i--) {
             let obj = objetosEnJuego[i];
             obj.y -= velocidadActual;
             obj.elemento.setAttribute("position", `${obj.x} ${obj.y} -3`);
 
-            // Colisión con la canasta (Y aprox -1.1 a -1.4)
             if (obj.y <= -1.1 && obj.y >= -1.4) {
-                if (Math.abs(canastaPosX - obj.x) < 0.6) {
+                if (Math.abs(canastaPosX - obj.x) < 0.5) {
                     if (obj.tipo === "fruta") {
                         score += 10;
                         scoreEl.textContent = score;
@@ -130,14 +133,12 @@ document.addEventListener("DOMContentLoaded", () => {
                             return;
                         }
                     }
-                    // Eliminar objeto de la escena y del arreglo
                     obj.elemento.parentNode.removeChild(obj.elemento);
                     objetosEnJuego.splice(i, 1);
                     continue;
                 }
             }
 
-            // Si el objeto cae al suelo sin ser atrapado
             if (obj.y < -2.0) {
                 if (obj.tipo === "fruta") {
                     vidas -= 1;
@@ -147,7 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         return;
                     }
                 }
-                // Si era bomba y se cayó, no pasa nada, se limpia
                 obj.elemento.parentNode.removeChild(obj.elemento);
                 objetosEnJuego.splice(i, 1);
             }
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function terminarJuego() {
         gameActive = false;
         canasta.setAttribute("visible", "false");
-        spawnContainer.innerHTML = ""; // Limpiar todos los objetos restantes
+        spawnContainer.innerHTML = "";
         finalScoreEl.textContent = score;
         gameOverScreen.classList.remove("hidden");
     }
