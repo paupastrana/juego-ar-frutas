@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const videoElement = document.getElementById("camera-video");
     const btnStart = document.getElementById("btn-start");
     const btnRestart = document.getElementById("btn-restart");
     const cameraStatus = document.getElementById("camera-status");
@@ -24,27 +23,43 @@ document.addEventListener("DOMContentLoaded", () => {
     let objetosEnJuego = [];
     let tiempoUltimoSpawn = 0;
     let velocidadBase = 0.02;
+    let videoStreamElement = null;
 
     async function activarCamara() {
         try {
+            // Crear elemento video dinámico para la cámara trasera
+            videoStreamElement = document.createElement('video');
+            videoStreamElement.setAttribute('autoplay', '');
+            videoStreamElement.setAttribute('muted', '');
+            videoStreamElement.setAttribute('playsinline', '');
+            videoStreamElement.style.position = 'fixed';
+            videoStreamElement.style.top = '0';
+            videoStreamElement.style.left = '0';
+            videoStreamElement.style.width = '100vw';
+            videoStreamElement.style.height = '100vh';
+            videoStreamElement.style.objectFit = 'cover';
+            videoStreamElement.style.zIndex = '-1';
+            document.body.appendChild(videoStreamElement);
+
             const constraints = {
                 video: {
-                    facingMode: "environment", // Cámara trasera
+                    facingMode: { exact: "environment" }, // Forzar cámara trasera
                     width: { ideal: 1280 },
                     height: { ideal: 720 }
                 },
                 audio: false
             };
 
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            videoElement.srcObject = stream;
-            
-            // Forzar reproducción para evitar pantalla negra en móviles
-            videoElement.setAttribute("autoplay", "");
-            videoElement.setAttribute("muted", "");
-            videoElement.setAttribute("playsinline", "");
-            
-            await videoElement.play();
+            let stream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (e) {
+                // Fallback si el dispositivo no soporta exact: environment
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+            }
+
+            videoStreamElement.srcObject = stream;
+            await videoStreamElement.play();
 
             startScreen.style.display = "none";
             canasta.setAttribute("visible", "true");
@@ -56,20 +71,21 @@ document.addEventListener("DOMContentLoaded", () => {
             iniciarGameLoop(performance.now());
         } catch (error) {
             console.error("Error al acceder a la cámara:", error);
-            cameraStatus.textContent = "Error de cámara. Asegúrate de usar HTTPS.";
+            cameraStatus.textContent = "Error de cámara. Asegúrate de dar permisos y usar HTTPS.";
+            if (videoStreamElement) videoStreamElement.remove();
         }
     }
 
-    // Límites de la canasta reducidos para que no salgan del celular (-1.3 a 1.3)
+    // Límites estrictos de la canasta (-0.8 a 0.8) para que no se salga de la pantalla del celular
     btnLeft.addEventListener("click", () => {
         if (!gameActive) return;
-        canastaPosX = Math.max(canastaPosX - 0.35, -1.3);
+        canastaPosX = Math.max(canastaPosX - 0.25, -0.8);
         canasta.setAttribute("position", `${canastaPosX} -1.25 -3`);
     });
 
     btnRight.addEventListener("click", () => {
         if (!gameActive) return;
-        canastaPosX = Math.min(canastaPosX + 0.35, 1.3);
+        canastaPosX = Math.min(canastaPosX + 0.25, 0.8);
         canasta.setAttribute("position", `${canastaPosX} -1.25 -3`);
     });
 
@@ -88,8 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
             el.dataset.tipo = "bomba";
         }
 
-        // Rango X ajustado de -1.2 a 1.2 para que caigan dentro de la pantalla vertical del celular
-        const posX = (Math.random() * 2.4) - 1.2;
+        // Rango X restringido (-0.7 a 0.7) para que caigan dentro de la vista móvil
+        const posX = (Math.random() * 1.4) - 0.7;
         const posY = 3.0;
         el.setAttribute("position", `${posX} ${posY} -3`);
 
@@ -121,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
             obj.elemento.setAttribute("position", `${obj.x} ${obj.y} -3`);
 
             if (obj.y <= -1.1 && obj.y >= -1.4) {
-                if (Math.abs(canastaPosX - obj.x) < 0.5) {
+                if (Math.abs(canastaPosX - obj.x) < 0.45) {
                     if (obj.tipo === "fruta") {
                         score += 10;
                         scoreEl.textContent = score;

@@ -10,9 +10,6 @@
 </head>
 <body>
 
-    <!-- Cámara del celular -->
-    <video id="camera-video" autoplay muted playsinline></video>
-
     <!-- Interfaz de Usuario -->
     <div id="ui-container">
         <div id="scoreboard">
@@ -38,12 +35,12 @@
         </div>
     </div>
 
-    <!-- Escena 3D transparente sobre la cámara -->
+    <!-- Escena 3D con soporte de cámara nativo integrado -->
     <a-scene
         id="game-scene"
         embedded
         vr-mode-ui="enabled: false"
-        renderer="alpha: true; antialias: true; colorManagement: true"
+        renderer="alpha: true; antialias: true; precision: medium"
         loading-screen="enabled: false">
 
         <a-assets timeout="20000">
@@ -63,10 +60,11 @@
                   visible="false">
         </a-entity>
 
-        <!-- Contenedor donde generaremos dinámicamente las frutas y bombas -->
+        <!-- Contenedor de frutas y bombas -->
         <a-entity id="spawn-container"></a-entity>
 
-        <a-entity camera position="0 0 0"></a-entity>
+        <!-- Cámara AR con feed de video nativo -->
+        <a-entity id="ar-camera" camera position="0 0 0"></a-entity>
     </a-scene>
 
     <script src="script.js"></script>

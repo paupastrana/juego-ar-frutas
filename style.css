@@ -5,29 +5,14 @@ body, html {
     height: 100%;
     overflow: hidden;
     font-family: sans-serif;
-    background-color: #000;
+    background-color: transparent !important;
 }
 
-/* Video de la cámara fijo en pantalla completa */
-#camera-video {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    z-index: -1;
-    background: black; /* Evita destellos blancos al cargar */
+/* Forzar transparencia absoluta en el canvas de A-Frame */
+canvas.a-canvas {
+    background-color: transparent !important;
 }
 
-/* Forzar transparencia en el canvas de A-Frame */
-.a-canvas {
-    background: transparent !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* Interfaz de usuario */
 #ui-container {
     position: fixed;
     top: 0;
