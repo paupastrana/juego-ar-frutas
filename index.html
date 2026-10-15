@@ -61,26 +61,30 @@
         <a-light type="directional" color="#FFFFFF" intensity="2" position="-1 3 2"></a-light>
 
         <!-- Canasta (inicialmente oculta) -->
-        <a-entity id="canasta"
-                  gltf-model="#canasta-model"
-                  position="0 -1.25 -3"
-                  scale="1.5 1.5 1.5" 
+        <a-entity id="canasta" 
+                  gltf-model="#canasta-model" 
+                  position="0 -1.25 -3" 
+                  scale="1 1 1"
                   visible="false">
         </a-entity>
 
-        <!-- Fruta (hazla mucho más pequeña bajando su escala, ej: 0.05 o 0.08) -->
-        <a-entity id="fruta"
+        <!-- 2. FRUTA (Modifica scale y position aquí) -->
+        <a-entity id="fruta" 
                   gltf-model="#fruta-model"
-                  position="0 2 -3"
-                  scale="0.05 0.05 0.05" 
+                  rotation="-65 0 0" 
+                  position="-1 0 -3" 
+                  scale="0.027 0.027 0.027"
                   visible="false">
         </a-entity>
-        <a-entity id="bomba"
-                  gltf-model="#bomba-model"
-                  position="0 2 -3"
-                  scale="0.05 0.05 0.05" 
+
+        <!-- 3. BOMBA (Modifica scale y position aquí) -->
+        <a-entity id="bomba" 
+                  gltf-model="#bomba-model" 
+                  position="1 0 -3" 
+                  scale="0.27 0.27 0.27"
                   visible="false">
         </a-entity>
+
 
         <a-entity camera position="0 0 0"></a-entity>
     </a-scene>
